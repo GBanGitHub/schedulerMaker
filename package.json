@@ -26,6 +26,9 @@
       "unrs-resolver"
     ]
   },
+  "prisma": {
+    "schema": "packages/database/prisma/schema.prisma"
+  },
   "devDependencies": {
     "turbo": "^2.8.17"
   }
