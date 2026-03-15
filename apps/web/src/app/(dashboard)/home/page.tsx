@@ -1,10 +1,12 @@
+import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@schedule-maker/database";
 import { Blocks, LayoutTemplate, CalendarClock, Calendar, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export default async function DashboardPage() {
-  const user = (await getCurrentUser())!;
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
 
   const [blockCount, templateCount, givenCount, scheduleCount] = await Promise.all([
     prisma.block.count({ where: { userId: user.id } }),
