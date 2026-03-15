@@ -167,20 +167,20 @@ function DraggableGiven({ given }: { given: Given }) {
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className={`flex items-center gap-3 px-4 py-3 rounded-lg border transition-all cursor-grab active:cursor-grabbing select-none ${
+      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border transition-all cursor-grab active:cursor-grabbing select-none ${
         isDragging
           ? "opacity-30 border-border"
           : "border-border hover:border-border-strong hover:bg-card-high"
       }`}
     >
-      <GripVertical className="h-4 w-4 text-subtle flex-shrink-0" />
+      <GripVertical className="h-3.5 w-3.5 text-subtle flex-shrink-0" />
       <div
-        className="w-3 h-3 rounded-full flex-shrink-0"
+        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
         style={{ backgroundColor: given.color }}
       />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-foreground truncate">{given.name}</p>
-        <p className="font-mono text-xs text-subtle mt-0.5">
+        <p className="font-mono text-[11px] text-subtle">
           {fmt(given.startTime)} – {fmt(given.endTime)}
         </p>
       </div>
@@ -204,16 +204,16 @@ function DraggableTemplate({ template }: { template: Template }) {
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className={`flex items-center gap-3 px-4 py-3 rounded-lg border transition-all cursor-grab active:cursor-grabbing select-none ${
+      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border transition-all cursor-grab active:cursor-grabbing select-none ${
         isDragging
           ? "opacity-30 border-border"
           : "border-border hover:border-border-strong hover:bg-card-high"
       }`}
     >
-      <GripVertical className="h-4 w-4 text-subtle flex-shrink-0" />
+      <GripVertical className="h-3.5 w-3.5 text-subtle flex-shrink-0" />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-foreground truncate">{template.name}</p>
-        <p className="font-mono text-xs text-subtle mt-0.5">
+        <p className="font-mono text-[11px] text-subtle">
           {template.templateBlocks.length} blocks · {formatDuration(totalMins)}
         </p>
       </div>
@@ -636,31 +636,31 @@ export default function CalendarPage() {
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div>
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
             <p className="font-mono text-[10px] text-subtle uppercase tracking-[0.4em] mb-2">
               Schedule
             </p>
             <h1 className="font-display text-4xl text-foreground tracking-widest">CALENDAR</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 flex-wrap">
             {undoStack.length > 0 && (
               <Button variant="ghost" size="sm" onClick={handleUndo}>
-                <Undo2 className="h-4 w-4 mr-2" />
-                Undo
+                <Undo2 className="h-4 w-4 mr-1.5" />
+                <span className="hidden sm:inline">Undo</span>
               </Button>
             )}
             <Button variant="ghost" size="sm" onClick={() => { setGenWeekResult(null); setGenerateWeekOpen(true); }}>
-              <CalendarPlus className="h-4 w-4 mr-2" />
-              Generate Week
+              <CalendarPlus className="h-4 w-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">Generate Week</span>
             </Button>
 
             {/* Import dropdown */}
             <div className="relative" ref={importMenuRef}>
               <Button variant="ghost" size="sm" onClick={() => setImportMenuOpen((v) => !v)}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Import
-                <ChevronDown className="h-3 w-3 ml-1.5 opacity-50" />
+                <RefreshCw className="h-4 w-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">Import</span>
+                <ChevronDown className="h-3 w-3 ml-1 opacity-50" />
               </Button>
               {importMenuOpen && (
                 <div className="absolute right-0 top-full mt-1 w-52 rounded-lg border border-border bg-card shadow-lg shadow-black/20 z-50 overflow-hidden">
@@ -692,9 +692,10 @@ export default function CalendarPage() {
               </Badge>
             )}
             {schedule && !schedule.syncedToGoogle && (
-              <Button variant="outline" onClick={openPublishModal} disabled={publishing}>
-                <Upload className="h-4 w-4 mr-2" />
-                Publish to Google
+              <Button variant="outline" size="sm" onClick={openPublishModal} disabled={publishing}>
+                <Upload className="h-4 w-4 mr-1.5" />
+                <span className="hidden sm:inline">Publish to Google</span>
+                <span className="sm:hidden">Publish</span>
               </Button>
             )}
           </div>
@@ -851,10 +852,10 @@ export default function CalendarPage() {
         )}
 
         {/* Main layout */}
-        <div className="flex gap-5">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-5">
 
           {/* Timeline */}
-          <div className="flex-1 border border-border rounded-xl overflow-hidden">
+          <div className="flex-1 min-w-0 border border-border rounded-xl overflow-hidden">
             <DroppableTimeline>
               {/* Hour rows */}
               {HOURS.map((hour) => (
@@ -924,17 +925,17 @@ export default function CalendarPage() {
           </div>
 
           {/* Sidebar */}
-          <div className="w-80 flex-shrink-0 space-y-3">
+          <div className="w-full lg:w-72 xl:w-80 lg:flex-shrink-0 space-y-3">
 
             {/* Givens palette */}
             <div className="border border-border rounded-xl overflow-hidden">
-              <div className="px-4 py-3.5 border-b border-border">
+              <div className="px-3 py-2.5 border-b border-border">
                 <p className="font-mono text-[10px] text-subtle uppercase tracking-[0.4em]">Givens</p>
-                <p className="text-base text-muted-foreground mt-0.5">Drag onto timeline</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Drag onto timeline</p>
               </div>
-              <div className="p-3 space-y-2">
+              <div className="p-2 space-y-1.5">
                 {givens.length === 0 ? (
-                  <p className="text-xs text-subtle text-center py-4">
+                  <p className="text-xs text-subtle text-center py-3">
                     No givens. Create some on the Givens page.
                   </p>
                 ) : (
@@ -945,13 +946,13 @@ export default function CalendarPage() {
 
             {/* Templates palette */}
             <div className="border border-border rounded-xl overflow-hidden">
-              <div className="px-4 py-3.5 border-b border-border">
+              <div className="px-3 py-2.5 border-b border-border">
                 <p className="font-mono text-[10px] text-subtle uppercase tracking-[0.4em]">Templates</p>
-                <p className="text-base text-muted-foreground mt-0.5">Drag to auto-schedule blocks</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Drag to auto-schedule</p>
               </div>
-              <div className="p-3 space-y-2">
+              <div className="p-2 space-y-1.5">
                 {templates.length === 0 ? (
-                  <p className="text-xs text-subtle text-center py-4">
+                  <p className="text-xs text-subtle text-center py-3">
                     No templates. Create some on the Templates page.
                   </p>
                 ) : (
@@ -963,12 +964,12 @@ export default function CalendarPage() {
             {/* Placed today */}
             {dateGivens.length > 0 && (
               <div className="border border-border rounded-xl overflow-hidden">
-                <div className="px-4 py-3 border-b border-border">
+                <div className="px-3 py-2.5 border-b border-border">
                   <p className="font-mono text-[9px] text-subtle uppercase tracking-[0.4em]">
                     Placed Today
                   </p>
                 </div>
-                <div className="p-3 space-y-2">
+                <div className="p-2 space-y-1.5">
                   {dateGivens.map((dg) => (
                     <div key={dg.id} className="flex items-center gap-2 text-xs">
                       <div

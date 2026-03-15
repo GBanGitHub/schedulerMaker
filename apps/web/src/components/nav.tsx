@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
@@ -13,6 +14,8 @@ import {
   BarChart2,
   Settings,
   LogOut,
+  MoreHorizontal,
+  X,
 } from "lucide-react";
 
 const navItems = [
@@ -25,9 +28,18 @@ const navItems = [
   { href: "/settings",   label: "Settings",  icon: Settings },
 ];
 
+// Show these 4 in mobile tab bar, rest go under "More"
+const mobileTabItems = navItems.slice(0, 4);
+const mobileMoreItems = navItems.slice(4);
+
 export function Nav() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  const isMoreActive = mobileMoreItems.some(
+    (item) => pathname === item.href || pathname.startsWith(item.href + "/")
+  );
 
   return (
     <>
@@ -36,9 +48,7 @@ export function Nav() {
 
         {/* Brand */}
         <div className="px-3.5 py-5 border-b border-border flex items-center gap-3 flex-shrink-0">
-          <div
-            className="font-display text-[1.6rem] leading-none tracking-wider text-primary text-glow select-none flex-shrink-0 w-[26px] text-center"
-          >
+          <div className="font-display text-[1.6rem] leading-none tracking-wider text-primary text-glow select-none flex-shrink-0 w-[26px] text-center">
             S
           </div>
           <div className="overflow-hidden opacity-0 group-hover/nav:opacity-100 transition-opacity duration-150 whitespace-nowrap">
@@ -128,30 +138,95 @@ export function Nav() {
       </aside>
 
       {/* ── Mobile bottom tab bar ── */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-card border-t border-border flex items-center justify-around px-1 pb-[env(safe-area-inset-bottom)]">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive =
-            pathname === item.href ||
-            pathname.startsWith(item.href + "/");
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-card/95 backdrop-blur-sm border-t border-border">
+        <div className="flex items-stretch justify-around px-2 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]">
+          {mobileTabItems.map((item) => {
+            const Icon = item.icon;
+            const isActive =
+              pathname === item.href ||
+              pathname.startsWith(item.href + "/");
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex flex-col items-center gap-0.5 py-2 px-1 min-w-0 flex-1",
-                isActive ? "text-primary" : "text-subtle"
-              )}
-            >
-              <Icon className="h-5 w-5" />
-              <span className="text-[9px] font-mono truncate leading-none">
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-1 py-1.5 px-3 rounded-lg min-w-[3.5rem]",
+                  isActive ? "text-primary" : "text-subtle"
+                )}
+              >
+                <Icon className="h-[22px] w-[22px]" />
+                <span className="text-[10px] font-mono leading-none">{item.label}</span>
+              </Link>
+            );
+          })}
+
+          {/* More button */}
+          <button
+            onClick={() => setMoreOpen((v) => !v)}
+            className={cn(
+              "flex flex-col items-center justify-center gap-1 py-1.5 px-3 rounded-lg min-w-[3.5rem]",
+              isMoreActive || moreOpen ? "text-primary" : "text-subtle"
+            )}
+          >
+            <MoreHorizontal className="h-[22px] w-[22px]" />
+            <span className="text-[10px] font-mono leading-none">More</span>
+          </button>
+        </div>
       </nav>
+
+      {/* ── Mobile "More" overlay ── */}
+      {moreOpen && (
+        <>
+          <div
+            className="md:hidden fixed inset-0 z-[55] bg-black/30"
+            onClick={() => setMoreOpen(false)}
+          />
+          <div className="md:hidden fixed bottom-0 inset-x-0 z-[60] bg-card rounded-t-2xl border-t border-border pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <div className="flex items-center justify-between px-5 pt-4 pb-2">
+              <p className="font-mono text-[10px] text-subtle uppercase tracking-[0.4em]">More</p>
+              <button onClick={() => setMoreOpen(false)} className="p-1 text-subtle">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="px-3 pb-2">
+              {mobileMoreItems.map((item) => {
+                const Icon = item.icon;
+                const isActive =
+                  pathname === item.href ||
+                  pathname.startsWith(item.href + "/");
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMoreOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-3 rounded-lg text-sm",
+                      isActive
+                        ? "text-primary bg-primary/10 font-medium"
+                        : "text-foreground"
+                    )}
+                  >
+                    <Icon className="h-5 w-5 flex-shrink-0" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+              <button
+                onClick={() => {
+                  setMoreOpen(false);
+                  signOut({ callbackUrl: `${window.location.origin}/login` });
+                }}
+                className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-sm text-subtle"
+              >
+                <LogOut className="h-5 w-5 flex-shrink-0" />
+                <span>Sign out</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }

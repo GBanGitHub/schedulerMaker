@@ -58,7 +58,7 @@ export default async function DashboardPage() {
 
       {/* Stats — tiled row with gap-px trick for seamless grid lines */}
       <div
-        className="grid grid-cols-4 border border-border rounded-xl overflow-hidden mb-8 anim-fade-up delay-1"
+        className="grid grid-cols-2 sm:grid-cols-4 border border-border rounded-xl overflow-hidden mb-8 anim-fade-up delay-1"
         style={{ gap: "1px", backgroundColor: "var(--color-border)" }}
       >
         {stats.map((stat) => {
