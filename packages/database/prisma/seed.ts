@@ -1,17 +1,21 @@
 import { PrismaClient } from "@prisma/client";
+import { hash } from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log("Seeding database...");
 
+  const passwordHash = await hash("password123", 12);
+
   // Create a test user
   const user = await prisma.user.upsert({
     where: { email: "test@example.com" },
-    update: {},
+    update: { passwordHash },
     create: {
       email: "test@example.com",
       name: "Test User",
+      passwordHash,
       timezone: "America/New_York",
       dayStartTime: "07:00",
       dayEndTime: "22:00",

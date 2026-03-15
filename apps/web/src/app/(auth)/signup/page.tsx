@@ -2,26 +2,40 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-export default function LoginPage() {
-  const searchParams = useSearchParams();
-  const callbackError = searchParams.get("error");
-
+export default function SignupPage() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(
-    callbackError === "CredentialsSignin" ? "Invalid email or password" : ""
-  );
+  const [confirm, setConfirm] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    setLoading(true);
 
+    if (password !== confirm) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    setLoading(true);
     try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, name: name || undefined }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "Registration failed");
+        return;
+      }
+
+      // Auto-login after successful registration
       const result = await signIn("credentials", {
         email,
         password,
@@ -30,7 +44,7 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError("Invalid email or password");
+        setError("Account created but login failed. Please log in manually.");
       }
     } catch {
       setError("Something went wrong. Please try again.");
@@ -73,10 +87,10 @@ export default function LoginPage() {
 
       <div className="relative z-10 flex flex-col items-center w-full max-w-sm px-6">
         {/* Brand */}
-        <div className="text-center mb-12 anim-fade-up">
+        <div className="text-center mb-10 anim-fade-up">
           <Link href="/">
             <h1
-              className="font-display text-[7rem] leading-none tracking-widest text-primary"
+              className="font-display text-[5rem] leading-none tracking-widest text-primary"
               style={{
                 textShadow: "0 0 40px rgba(45,106,79,0.4), 0 0 80px rgba(45,106,79,0.15)",
               }}
@@ -89,12 +103,12 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Login card */}
+        {/* Signup card */}
         <div className="w-full anim-fade-up delay-2">
           <div className="border border-border bg-card rounded-xl overflow-hidden">
             <div className="px-6 py-4 border-b border-border">
               <p className="font-mono text-[9px] text-subtle uppercase tracking-[0.4em]">
-                Authentication Required
+                Create Account
               </p>
             </div>
 
@@ -104,6 +118,20 @@ export default function LoginPage() {
                   {error}
                 </div>
               )}
+
+              <div>
+                <label htmlFor="name" className="block font-mono text-[10px] text-subtle uppercase tracking-[0.3em] mb-1.5">
+                  Name <span className="text-muted-foreground">(optional)</span>
+                </label>
+                <input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full h-10 px-3 rounded-lg bg-card-high border border-border-strong text-foreground text-sm placeholder:text-subtle focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors"
+                  placeholder="Your name"
+                />
+              </div>
 
               <div>
                 <label htmlFor="email" className="block font-mono text-[10px] text-subtle uppercase tracking-[0.3em] mb-1.5">
@@ -130,8 +158,25 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  minLength={8}
                   className="w-full h-10 px-3 rounded-lg bg-card-high border border-border-strong text-foreground text-sm placeholder:text-subtle focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors"
-                  placeholder="Your password"
+                  placeholder="Min 8 characters"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="confirm" className="block font-mono text-[10px] text-subtle uppercase tracking-[0.3em] mb-1.5">
+                  Confirm Password
+                </label>
+                <input
+                  id="confirm"
+                  type="password"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  required
+                  minLength={8}
+                  className="w-full h-10 px-3 rounded-lg bg-card-high border border-border-strong text-foreground text-sm placeholder:text-subtle focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors"
+                  placeholder="Re-enter password"
                 />
               </div>
 
@@ -140,13 +185,13 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full h-11 rounded-lg bg-primary text-background font-medium text-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
-                {loading ? "Signing in…" : "Sign In"}
+                {loading ? "Creating account…" : "Sign Up"}
               </button>
 
               <p className="text-sm text-muted-foreground text-center">
-                Don&apos;t have an account?{" "}
-                <Link href="/signup" className="text-primary hover:underline">
-                  Sign up
+                Already have an account?{" "}
+                <Link href="/login" className="text-primary hover:underline">
+                  Log in
                 </Link>
               </p>
             </form>

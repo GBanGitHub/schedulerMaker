@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { href: "/",           label: "Dashboard", icon: LayoutDashboard },
+  { href: "/home",       label: "Dashboard", icon: LayoutDashboard },
   { href: "/blocks",     label: "Blocks",    icon: Blocks },
   { href: "/templates",  label: "Templates", icon: LayoutTemplate },
   { href: "/givens",     label: "Givens",    icon: CalendarClock },
@@ -55,7 +55,7 @@ export function Nav() {
           const Icon = item.icon;
           const isActive =
             pathname === item.href ||
-            (item.href !== "/" && pathname.startsWith(item.href));
+            pathname.startsWith(item.href + "/");
 
           return (
             <Link

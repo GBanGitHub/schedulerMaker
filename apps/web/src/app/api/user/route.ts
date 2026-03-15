@@ -11,6 +11,7 @@ export async function GET() {
       dayStartTime: user.dayStartTime,
       dayEndTime: user.dayEndTime,
       defaultBreakMins: user.defaultBreakMins,
+      hasGoogleCalendar: !!(user.accessToken && user.refreshToken),
     });
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

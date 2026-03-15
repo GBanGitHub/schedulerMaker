@@ -13,6 +13,7 @@ model User {
   name          String?
   image         String?
   emailVerified DateTime?
+  passwordHash  String?
 
   // Google OAuth tokens
   accessToken  String?
