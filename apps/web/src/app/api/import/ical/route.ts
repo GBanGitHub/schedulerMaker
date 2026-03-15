@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import * as ical from "node-ical";
+import type { VEvent } from "node-ical";
 import { prisma } from "@schedule-maker/database";
 import { requireUser } from "@/lib/session";
 
@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
   }
   const text = await response.text();
 
+  const ical = await import("node-ical");
   const parsed = ical.parseICS(text);
 
   let imported = 0;
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
     const component = parsed[key];
     if (!component || component.type !== "VEVENT") continue;
 
-    const event = component as ical.VEvent;
+    const event = component as VEvent;
 
     const dtstart = event.start;
     if (!dtstart) { skipped++; continue; }
