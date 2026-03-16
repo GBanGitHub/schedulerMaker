@@ -24,6 +24,7 @@ export interface GivenInput {
   name: string;
   startTime: Date;
   endTime: Date;
+  priority?: number; // higher = more important; blocks yield to higher-priority givens
 }
 
 export interface ExternalEvent {

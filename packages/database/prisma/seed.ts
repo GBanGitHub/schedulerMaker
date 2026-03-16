@@ -105,6 +105,7 @@ async function main() {
         startTime: "07:00",
         endTime: "19:00",
         color: "#10B981",
+        priority: 5,
       },
     }),
     prisma.given.create({
@@ -114,6 +115,7 @@ async function main() {
         startTime: "19:00",
         endTime: "07:00",
         color: "#6366F1",
+        priority: 5,
       },
     }),
   ]);

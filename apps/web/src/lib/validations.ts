@@ -33,6 +33,7 @@ export const givenSchema = z.object({
   startTime: z.string().regex(timeRegex, "Must be HH:mm format"),
   endTime: z.string().regex(timeRegex, "Must be HH:mm format"),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color").default("#10B981"),
+  priority: z.number().int().min(0).max(10).default(0),
   recurrence: z.string().optional(),
 });
 

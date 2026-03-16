@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
         name: dg.given.name,
         startTime: start,
         endTime: end,
+        priority: (dg.given as any).priority ?? 0,
       };
     });
 

@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   X, GripVertical, AlertTriangle, Clock,
-  ChevronLeft, ChevronRight, ChevronDown, Upload, Trash2, Undo2,
+  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Upload, Trash2, Undo2,
   Download, RefreshCw, WifiOff, CalendarPlus, Link2,
 } from "lucide-react";
 import { format, addDays, startOfWeek } from "date-fns";
@@ -34,6 +34,7 @@ interface Given {
   startTime: string;
   endTime: string;
   color: string;
+  priority: number;
 }
 
 interface DateGiven {
@@ -81,6 +82,7 @@ interface TimelineItem {
   endTime: string;
   type: "dateGiven" | "scheduleBlock";
   dateGivenId?: string;
+  scheduleBlockId?: string;
   isContinuation?: boolean;
   isOvernight?: boolean;
 }
@@ -179,7 +181,12 @@ function DraggableGiven({ given }: { given: Given }) {
         style={{ backgroundColor: given.color }}
       />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-foreground truncate">{given.name}</p>
+        <p className="text-sm font-medium text-foreground truncate">
+          {given.name}
+          {given.priority > 0 && (
+            <span className="ml-1.5 text-[10px] font-mono text-warning/70">P{given.priority}</span>
+          )}
+        </p>
         <p className="font-mono text-[11px] text-subtle">
           {fmt(given.startTime)} – {fmt(given.endTime)}
         </p>
@@ -241,6 +248,8 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   // Extra days selected for batch placement (always includes selectedDate)
   const [batchDays, setBatchDays] = useState<Set<string>>(new Set());
+  // Mobile sidebar accordion — which panel is open
+  const [mobilePanelOpen, setMobilePanelOpen] = useState<"givens" | "templates" | null>("givens");
 
   const [givens, setGivens] = useState<Given[]>([]);
   const [dateGivens, setDateGivens] = useState<DateGiven[]>([]);
@@ -345,6 +354,7 @@ export default function CalendarPage() {
       startTime: format(new Date(b.startTime), "HH:mm"),
       endTime: format(new Date(b.endTime), "HH:mm"),
       type: "scheduleBlock" as const,
+      scheduleBlockId: b.id,
     })) ?? []),
     ...dateGivens.map((dg) => ({
       id: `dg-${dg.id}`,
@@ -416,12 +426,19 @@ export default function CalendarPage() {
         body: JSON.stringify({ date: selectedDate, templateId: template.id, syncMode: "RESPECT_EXISTING" }),
       });
       if (res.ok) {
-        const { schedule: newSchedule } = await res.json() as { schedule: Schedule };
+        const result = await res.json() as { schedule: Schedule; unscheduledBlocks: { name: string }[] };
         setUndoStack((s) => [...s, async () => {
-          await fetch(`/api/schedules/${newSchedule.id}`, { method: "DELETE" });
+          await fetch(`/api/schedules/${result.schedule.id}`, { method: "DELETE" });
           fetchAllRef.current();
         }]);
+        if (result.unscheduledBlocks?.length > 0) {
+          const names = result.unscheduledBlocks.map((b) => b.name).join(", ");
+          alert(`Some blocks couldn't be scheduled: ${names}`);
+        }
         fetchAll();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(`Failed to generate schedule: ${err.error ?? "Unknown error"}`);
       }
       return;
     }
@@ -589,6 +606,19 @@ export default function CalendarPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(snap),
         });
+        fetchAllRef.current();
+      }]);
+    }
+    fetchAll();
+  }
+
+  async function removeScheduleBlock(scheduleBlockId: string) {
+    const sb = schedule?.blocks.find((b) => b.id === scheduleBlockId);
+    await fetch(`/api/schedule-blocks/${scheduleBlockId}`, { method: "DELETE" });
+    if (sb) {
+      const snap = { ...sb };
+      setUndoStack((s) => [...s, async () => {
+        // Re-create by re-generating — no single-block re-add API
         fetchAllRef.current();
       }]);
     }
@@ -854,8 +884,100 @@ export default function CalendarPage() {
         {/* Main layout */}
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-5">
 
-          {/* Timeline */}
-          <div className="flex-1 min-w-0 border border-border rounded-xl overflow-hidden">
+          {/* Sidebar — appears first on mobile (natural DOM order) */}
+          <div className="w-full lg:w-72 xl:w-80 lg:flex-shrink-0 space-y-3">
+
+            {/* Givens palette */}
+            <div className="border border-border rounded-xl overflow-hidden">
+              <button
+                className="w-full flex items-center justify-between px-3 py-2.5 border-b border-border lg:pointer-events-none"
+                onClick={() => setMobilePanelOpen(mobilePanelOpen === "givens" ? null : "givens")}
+              >
+                <div>
+                  <p className="font-mono text-[10px] text-subtle uppercase tracking-[0.4em] text-left">Givens</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 text-left">Drag onto timeline</p>
+                </div>
+                {mobilePanelOpen === "givens"
+                  ? <ChevronUp className="h-4 w-4 text-subtle lg:hidden" />
+                  : <ChevronDown className="h-4 w-4 text-subtle lg:hidden" />}
+              </button>
+              <div className={`p-2 space-y-1.5 ${mobilePanelOpen === "givens" ? "max-h-40 overflow-y-auto lg:max-h-none lg:overflow-visible" : "hidden lg:block"}`}>
+                {givens.length === 0 ? (
+                  <p className="text-xs text-subtle text-center py-3">
+                    No givens. Create some on the Givens page.
+                  </p>
+                ) : (
+                  givens.map((g) => <DraggableGiven key={g.id} given={g} />)
+                )}
+              </div>
+            </div>
+
+            {/* Templates palette */}
+            <div className="border border-border rounded-xl overflow-hidden">
+              <button
+                className="w-full flex items-center justify-between px-3 py-2.5 border-b border-border lg:pointer-events-none"
+                onClick={() => setMobilePanelOpen(mobilePanelOpen === "templates" ? null : "templates")}
+              >
+                <div>
+                  <p className="font-mono text-[10px] text-subtle uppercase tracking-[0.4em] text-left">Templates</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 text-left">Drag to auto-schedule</p>
+                </div>
+                {mobilePanelOpen === "templates"
+                  ? <ChevronUp className="h-4 w-4 text-subtle lg:hidden" />
+                  : <ChevronDown className="h-4 w-4 text-subtle lg:hidden" />}
+              </button>
+              <div className={`p-2 space-y-1.5 ${mobilePanelOpen === "templates" ? "max-h-40 overflow-y-auto lg:max-h-none lg:overflow-visible" : "hidden lg:block"}`}>
+                {templates.length === 0 ? (
+                  <p className="text-xs text-subtle text-center py-3">
+                    No templates. Create some on the Templates page.
+                  </p>
+                ) : (
+                  templates.map((t) => <DraggableTemplate key={t.id} template={t} />)
+                )}
+              </div>
+            </div>
+
+            {/* Placed today — desktop only */}
+            {dateGivens.length > 0 && (
+              <div className="hidden lg:block border border-border rounded-xl overflow-hidden">
+                <div className="px-3 py-2.5 border-b border-border">
+                  <p className="font-mono text-[9px] text-subtle uppercase tracking-[0.4em]">
+                    Placed Today
+                  </p>
+                </div>
+                <div className="p-2 space-y-1.5">
+                  {dateGivens.map((dg) => (
+                    <div key={dg.id} className="flex items-center gap-2 text-xs">
+                      <div
+                        className="w-2 h-2 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: dg.given.color }}
+                      />
+                      <span className="text-foreground flex-1 truncate">{dg.given.name}</span>
+                      <span className="font-mono text-subtle whitespace-nowrap">
+                        {fmt(dg.startTime)}–{fmt(dg.endTime)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Clear schedule — desktop only */}
+            {schedule && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hidden lg:flex w-full text-subtle hover:text-destructive"
+                onClick={clearSchedule}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-2" />
+                Clear schedule
+              </Button>
+            )}
+          </div>
+
+          {/* Timeline — appears first on desktop via order */}
+          <div className="flex-1 min-w-0 border border-border rounded-xl overflow-hidden lg:order-first">
             <DroppableTimeline>
               {/* Hour rows */}
               {HOURS.map((hour) => (
@@ -905,6 +1027,14 @@ export default function CalendarPage() {
                             <X className="h-3 w-3" />
                           </button>
                         )}
+                        {item.scheduleBlockId && (
+                          <button
+                            onClick={() => removeScheduleBlock(item.scheduleBlockId!)}
+                            className="p-0.5 rounded hover:bg-white/20 transition-colors"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        )}
                       </div>
                     </div>
                     {height > 36 && (
@@ -922,82 +1052,6 @@ export default function CalendarPage() {
                 );
               })}
             </DroppableTimeline>
-          </div>
-
-          {/* Sidebar */}
-          <div className="w-full lg:w-72 xl:w-80 lg:flex-shrink-0 space-y-3">
-
-            {/* Givens palette */}
-            <div className="border border-border rounded-xl overflow-hidden">
-              <div className="px-3 py-2.5 border-b border-border">
-                <p className="font-mono text-[10px] text-subtle uppercase tracking-[0.4em]">Givens</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Drag onto timeline</p>
-              </div>
-              <div className="p-2 space-y-1.5">
-                {givens.length === 0 ? (
-                  <p className="text-xs text-subtle text-center py-3">
-                    No givens. Create some on the Givens page.
-                  </p>
-                ) : (
-                  givens.map((g) => <DraggableGiven key={g.id} given={g} />)
-                )}
-              </div>
-            </div>
-
-            {/* Templates palette */}
-            <div className="border border-border rounded-xl overflow-hidden">
-              <div className="px-3 py-2.5 border-b border-border">
-                <p className="font-mono text-[10px] text-subtle uppercase tracking-[0.4em]">Templates</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Drag to auto-schedule</p>
-              </div>
-              <div className="p-2 space-y-1.5">
-                {templates.length === 0 ? (
-                  <p className="text-xs text-subtle text-center py-3">
-                    No templates. Create some on the Templates page.
-                  </p>
-                ) : (
-                  templates.map((t) => <DraggableTemplate key={t.id} template={t} />)
-                )}
-              </div>
-            </div>
-
-            {/* Placed today */}
-            {dateGivens.length > 0 && (
-              <div className="border border-border rounded-xl overflow-hidden">
-                <div className="px-3 py-2.5 border-b border-border">
-                  <p className="font-mono text-[9px] text-subtle uppercase tracking-[0.4em]">
-                    Placed Today
-                  </p>
-                </div>
-                <div className="p-2 space-y-1.5">
-                  {dateGivens.map((dg) => (
-                    <div key={dg.id} className="flex items-center gap-2 text-xs">
-                      <div
-                        className="w-2 h-2 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: dg.given.color }}
-                      />
-                      <span className="text-foreground flex-1 truncate">{dg.given.name}</span>
-                      <span className="font-mono text-subtle whitespace-nowrap">
-                        {fmt(dg.startTime)}–{fmt(dg.endTime)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Clear schedule */}
-            {schedule && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full text-subtle hover:text-destructive"
-                onClick={clearSchedule}
-              >
-                <Trash2 className="h-3.5 w-3.5 mr-2" />
-                Clear schedule
-              </Button>
-            )}
           </div>
         </div>
 

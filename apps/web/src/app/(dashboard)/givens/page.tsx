@@ -13,6 +13,7 @@ interface Given {
   startTime: string;
   endTime: string;
   color: string;
+  priority: number;
   recurrence: string | null;
   googleEventId: string | null;
 }
@@ -60,6 +61,7 @@ export default function GivensPage() {
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
   const [color, setColor] = useState("#10B981");
+  const [priority, setPriority] = useState(0);
   const [repeatEnabled, setRepeatEnabled] = useState(false);
   const [selectedDays, setSelectedDays] = useState<Set<string>>(new Set());
 
@@ -79,7 +81,7 @@ export default function GivensPage() {
 
   function openCreate() {
     setEditing(null);
-    setName(""); setStartTime("09:00"); setEndTime("17:00"); setColor("#10B981");
+    setName(""); setStartTime("09:00"); setEndTime("17:00"); setColor("#10B981"); setPriority(0);
     setRepeatEnabled(false); setSelectedDays(new Set());
     setDialogOpen(true);
   }
@@ -87,7 +89,7 @@ export default function GivensPage() {
   function openEdit(given: Given) {
     setEditing(given);
     setName(given.name); setStartTime(given.startTime);
-    setEndTime(given.endTime); setColor(given.color);
+    setEndTime(given.endTime); setColor(given.color); setPriority(given.priority ?? 0);
     const days = parseWeekdaysFromRrule(given.recurrence);
     setRepeatEnabled(days.size > 0);
     setSelectedDays(days);
@@ -106,7 +108,7 @@ export default function GivensPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const recurrence = repeatEnabled ? buildRrule(selectedDays) : null;
-    const payload = { name, startTime, endTime, color, recurrence };
+    const payload = { name, startTime, endTime, color, priority, recurrence };
 
     if (editing) {
       await fetch(`/api/givens/${editing.id}`, {
@@ -213,6 +215,9 @@ export default function GivensPage() {
                 <p className="font-mono text-xs text-muted-foreground mt-0.5">
                   {formatTime(given.startTime)} → {formatTime(given.endTime)}
                   <span className="text-subtle ml-2">({duration(given.startTime, given.endTime)})</span>
+                  {given.priority > 0 && (
+                    <span className="ml-2 text-warning opacity-70">P{given.priority}</span>
+                  )}
                   {given.recurrence && (
                     <span className="ml-2 text-primary opacity-70">↻ recurring</span>
                   )}
@@ -290,6 +295,22 @@ export default function GivensPage() {
                   />
                 ))}
               </div>
+            </div>
+
+            {/* Priority */}
+            <div>
+              <Label htmlFor="gpriority">Priority (0–10)</Label>
+              <p className="text-xs text-muted-foreground mb-1">
+                Higher priority givens push scheduled blocks out of the way.
+              </p>
+              <Input
+                id="gpriority"
+                type="number"
+                min={0}
+                max={10}
+                value={priority}
+                onChange={(e) => setPriority(Number(e.target.value))}
+              />
             </div>
 
             {/* Repeat toggle */}

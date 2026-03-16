@@ -28,8 +28,9 @@ export function generateSchedule(input: ScheduleInput): ScheduleOutput {
     throw new SchedulingError("No time slots available for the given day range");
   }
 
-  // Block off Givens
-  for (const given of givens) {
+  // Block off Givens (higher priority first — they always get their time)
+  const sortedGivens = [...givens].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+  for (const given of sortedGivens) {
     markSlotsAsBlocked(slots, given.startTime, given.endTime);
   }
 

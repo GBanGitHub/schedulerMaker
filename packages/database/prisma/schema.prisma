@@ -141,6 +141,7 @@ model Given {
   startTime  String  // "HH:mm" default start
   endTime    String  // "HH:mm" default end
   color      String  @default("#10B981")
+  priority   Int     @default(0) // higher = more important; blocks yield to higher-priority givens
   recurrence String? // RRULE string e.g. "FREQ=WEEKLY;BYDAY=MO,WE,FR"
 
   // Google Calendar link
