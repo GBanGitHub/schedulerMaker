@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@schedule-maker/database";
 import { registerSchema } from "@/lib/validations";
+import { seedExamplesForUser } from "@/lib/seed-examples";
 import bcrypt from "bcryptjs";
 
 export async function POST(req: NextRequest) {
@@ -17,9 +18,12 @@ export async function POST(req: NextRequest) {
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: { email, name, passwordHash },
     });
+
+    // Seed example blocks, template, and givens (non-blocking)
+    await seedExamplesForUser(user.id);
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error: any) {
