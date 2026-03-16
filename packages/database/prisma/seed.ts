@@ -116,15 +116,6 @@ async function main() {
         color: "#6366F1",
       },
     }),
-    prisma.given.create({
-      data: {
-        userId: user.id,
-        name: "Church",
-        startTime: "10:00",
-        endTime: "12:00",
-        color: "#F59E0B",
-      },
-    }),
   ]);
 
   console.log(`Created user: ${user.email}`);

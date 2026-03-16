@@ -191,7 +191,7 @@ export default function GivensPage() {
       <div className="border border-border rounded-xl overflow-hidden">
         {givens.length === 0 ? (
           <div className="text-center py-16 text-muted-foreground">
-            <p className="text-sm">No givens yet. Create pieces like &quot;Day Shift&quot; or &quot;Church&quot;.</p>
+            <p className="text-sm">No givens yet. Create pieces like &quot;Day Shift&quot; or &quot;Night Shift&quot;.</p>
           </div>
         ) : (
           givens.map((given, i) => (
